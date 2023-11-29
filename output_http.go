@@ -277,7 +277,10 @@ type HTTPClient struct {
 func NewHTTPClient(config *HTTPOutputConfig) *HTTPClient {
 	client := new(HTTPClient)
 	client.config = config
-	var transport = http.DefaultTransport.(*http.Transport).Clone()
+	transport := &http.Transport{
+		MaxIdleConns:    10,
+		IdleConnTimeout: 30 * time.Second,
+	}
 	if config.SkipVerify {
 		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
