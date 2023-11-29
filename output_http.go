@@ -277,9 +277,13 @@ type HTTPClient struct {
 func NewHTTPClient(config *HTTPOutputConfig) *HTTPClient {
 	client := new(HTTPClient)
 	client.config = config
-	var transport *http.Transport
+	var transport = http.DefaultTransport.(*http.Transport).Clone()
+	if config.SkipVerify {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 	client.Client = &http.Client{
-		Timeout: client.config.Timeout,
+		Timeout:   client.config.Timeout,
+		Transport: transport,
 		CheckRedirect: func(req *http.Request, via []*http.Request) error {
 			if len(via) >= client.config.RedirectLimit {
 				Debug(1, fmt.Sprintf("[HTTPCLIENT] maximum output-http-redirects[%d] reached!", client.config.RedirectLimit))
@@ -291,12 +295,12 @@ func NewHTTPClient(config *HTTPOutputConfig) *HTTPClient {
 			return nil
 		},
 	}
-	if config.SkipVerify {
-		// clone to avoid modying global default RoundTripper
-		transport = http.DefaultTransport.(*http.Transport).Clone()
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-		client.Client.Transport = transport
-	}
+	//if config.SkipVerify {
+	//	// clone to avoid modying global default RoundTripper
+	//	transport = http.DefaultTransport.(*http.Transport).Clone()
+	//	transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	//	client.Client.Transport = transport
+	//}
 
 	return client
 }
